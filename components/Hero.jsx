@@ -56,58 +56,30 @@ const AntlerIcon = memo(function AntlerIcon({ size = 28 }) {
   );
 });
 
-// Bottom-left reveal content after image zoom
+
 const OverlayContent = memo(function OverlayContent({ opacity, y }) {
   return (
     <motion.div
       style={{ opacity, y }}
-      className="absolute bottom-10 left-6 md:left-12 lg:left-16 z-3 max-w-xs md:max-w-sm"
+      className="absolute top-32 left-1/2 z-3 max-w-sm md:max-w-md lg:max-w-lg"
     >
-      {/* Label tag */}
-      <div
-        className="inline-flex items-center gap-2 mb-4"
-        style={{ fontFamily: "var(--font-inter)" }}
-      >
-        <span className="w-6 h-px bg-white/60" />
-        <span
-          className="text-white/60 uppercase tracking-[0.25em]"
-          style={{ fontSize: "0.6rem" }}
-        >
-          Exterior
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div className="w-10 h-px bg-white/30 mb-5" />
-
-      {/* Description text */}
-      <p
-        className="text-white/90 leading-relaxed mb-6"
+      <p 
+        className="text-white/95 leading-relaxed"
         style={{
           fontFamily: "var(--font-cormorant)",
-          fontSize: "clamp(0.95rem, 1.2vw, 1.1rem)",
-          fontWeight: 300,
+          fontSize: "clamp(1.1rem, 2.2vw, 1.4rem)",
+          fontWeight: 500,
           letterSpacing: "0.02em",
+          textShadow: "0 2px 20px rgba(0,0,0,0.3)",
+          marginLeft: "2rem", 
+          textAlign: "left"
         }}
       >
         Méchante Cabane is a luxury short-term retreat set within an expansive
-        private natural domain in Canada.
+        private natural domain in Canada. Designed with a strong architectural
+        identity, the property blends contemporary living with the raw beauty of
+        its surroundings.
       </p>
-
-      {/* CTA row */}
-      <Link
-        href="#explore"
-        className="group inline-flex items-center gap-3 text-white/80 hover:text-white transition-colors duration-300"
-        style={{
-          fontFamily: "var(--font-inter)",
-          fontSize: "0.6rem",
-          letterSpacing: "0.25em",
-          textTransform: "uppercase",
-        }}
-      >
-        Discover More
-        <span className="w-6 h-px bg-white/60 group-hover:w-10 group-hover:bg-white transition-all duration-400" />
-      </Link>
     </motion.div>
   );
 });
