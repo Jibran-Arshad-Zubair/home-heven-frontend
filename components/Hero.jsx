@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 
+// ─── AntlerIcon (unchanged) ──────────────────────────────────────────────────
 const AntlerIcon = memo(function AntlerIcon({ size = 28 }) {
   return (
     <svg
@@ -21,18 +22,8 @@ const AntlerIcon = memo(function AntlerIcon({ size = 28 }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path
-        d="M18 14 L8 20"
-        stroke="white"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M22 20 L14 24"
-        stroke="white"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
+      <path d="M18 14 L8 20" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M22 20 L14 24" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
       <path
         d="M26 26 L34 14 L38 4"
         stroke="white"
@@ -40,30 +31,20 @@ const AntlerIcon = memo(function AntlerIcon({ size = 28 }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path
-        d="M34 14 L44 20"
-        stroke="white"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M30 20 L38 24"
-        stroke="white"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
+      <path d="M34 14 L44 20" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M30 20 L38 24" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 });
 
-
+// ─── OverlayContent (existing — behavior preserved) ──────────────────────────
 const OverlayContent = memo(function OverlayContent({ opacity, y }) {
   return (
     <motion.div
       style={{ opacity, y }}
       className="absolute top-32 left-1/2 z-3 max-w-sm md:max-w-md lg:max-w-lg"
     >
-      <p 
+      <p
         className="text-white/95 leading-relaxed"
         style={{
           fontFamily: "var(--font-cormorant)",
@@ -71,8 +52,8 @@ const OverlayContent = memo(function OverlayContent({ opacity, y }) {
           fontWeight: 500,
           letterSpacing: "0.02em",
           textShadow: "0 2px 20px rgba(0,0,0,0.3)",
-          marginLeft: "2rem", 
-          textAlign: "left"
+          marginLeft: "2rem",
+          textAlign: "left",
         }}
       >
         Méchante Cabane is a luxury short-term retreat set within an expansive
@@ -84,48 +65,167 @@ const OverlayContent = memo(function OverlayContent({ opacity, y }) {
   );
 });
 
+// ─── Phase 3: Bottom-center text (3 lines) ───────────────────────────────────
+const BottomCenterText = memo(function BottomCenterText({ opacity, y }) {
+  return (
+    <motion.div
+      style={{ opacity, y }}
+      className="absolute bottom-16 left-0 right-0 z-3 flex flex-col items-center text-center px-6 pointer-events-none"
+    >
+      <div
+        style={{
+          width: "2rem",
+          height: "1px",
+          backgroundColor: "rgba(255,255,255,0.35)",
+          marginBottom: "1.25rem",
+        }}
+      />
+      <p
+        className="text-white/85"
+        style={{
+          fontFamily: "var(--font-cormorant)",
+          fontSize: "clamp(0.9rem, 1.5vw, 1.15rem)",
+          fontWeight: 300,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          textShadow: "0 2px 24px rgba(0,0,0,0.55)",
+          lineHeight: 2.4,
+        }}
+      >
+        Nestled between ancient forests and open skies
+        <br />
+        A sanctuary where silence becomes a luxury
+        <br />
+        Where every season tells a different story
+      </p>
+    </motion.div>
+  );
+});
+
+// ─── Phase 4: Center text — "Experience Méchante Cabane" ─────────────────────
+const ExperienceText = memo(function ExperienceText({ opacity, y }) {
+  return (
+    <motion.div
+      style={{ opacity, y }}
+      className="absolute inset-0 z-3 flex items-center justify-center pointer-events-none"
+    >
+      {/* Offset slightly below vertical center */}
+      <div className="text-center mt-20">
+        <p
+          style={{
+            fontFamily: "var(--font-inter)",
+            fontSize: "clamp(0.55rem, 0.9vw, 0.7rem)",
+            letterSpacing: "0.38em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.5)",
+            marginBottom: "1.1rem",
+          }}
+        >
+          Discover
+        </p>
+        <h2
+          style={{
+            fontFamily: "var(--font-cormorant)",
+            fontSize: "clamp(2rem, 5.5vw, 5rem)",
+            fontWeight: 300,
+            letterSpacing: "0.06em",
+            color: "white",
+            textShadow:
+              "0 0 80px rgba(0,0,0,0.35), 0 2px 40px rgba(0,0,0,0.25)",
+            lineHeight: 1.1,
+          }}
+        >
+          Experience Méchante Cabane
+        </h2>
+        <div
+          style={{
+            width: "3rem",
+            height: "1px",
+            backgroundColor: "rgba(255,255,255,0.35)",
+            margin: "1.75rem auto 0",
+          }}
+        />
+      </div>
+    </motion.div>
+  );
+});
+
+// ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
   const containerRef = useRef(null);
 
-  // Track scroll progress across the entire scroll container
+  // Track scroll progress across the full 550vh container
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
-  // --- Phase 1: Content exits (0 → 0.32) ---
-  const contentY = useTransform(scrollYProgress, [0, 0.32], ["0%", "-28%"]);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.28], [1, 0]);
-  const contentBlurRaw = useTransform(scrollYProgress, [0, 0.28], [0, 10]);
+  // ── Phase 1: Initial hero content exits (0 → 0.10) ──────────────────────
+  const contentY = useTransform(scrollYProgress, [0, 0.12], ["0%", "-28%"]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.10], [1, 0]);
+  const contentBlurRaw = useTransform(scrollYProgress, [0, 0.10], [0, 10]);
   const contentFilter = useTransform(
     contentBlurRaw,
     (v) => `blur(${v.toFixed(2)}px)`
   );
 
-  // Scroll indicator matches content fade
-  const indicatorOpacity = useTransform(scrollYProgress, [0, 0.18], [1, 0]);
+  // Scroll indicator fades before content
+  const indicatorOpacity = useTransform(scrollYProgress, [0, 0.07], [1, 0]);
 
-  // --- Phase 2: Image scale — zoom OUT effect (0.28 → 0.62) ---
-  // Start above 1.0 and end at 1.0 so the image always fills the viewport (no side gaps)
-  const imageScale = useTransform(scrollYProgress, [0.28, 0.62], [1.2, 1.0]);
+  // ── Phase 2: Drone zoom-out — continuous across the full scroll ──────────
+  // Scale 1.9 (tight close-up) → 1.0 (full landscape visible)
+  const imageScale = useTransform(scrollYProgress, [0, 0.88], [1.9, 1.0]);
 
-  // --- Phase 3: Overlay content appears bottom-left (0.6 → 0.82) ---
-  const overlayOpacity = useTransform(scrollYProgress, [0.6, 0.82], [0, 1]);
-  const overlayY = useTransform(scrollYProgress, [0.6, 0.82], ["24px", "0px"]);
+  // ── Phase 3: OverlayContent — fade in, hold, fade out ───────────────────
+  const overlayOpacity = useTransform(
+    scrollYProgress,
+    [0.26, 0.36, 0.44, 0.52],
+    [0, 1, 1, 0]
+  );
+  const overlayY = useTransform(
+    scrollYProgress,
+    [0.26, 0.36],
+    ["24px", "0px"]
+  );
+
+  // ── Phase 4: Bottom-center text — fade in, hold, fade out ───────────────
+  const text1Opacity = useTransform(
+    scrollYProgress,
+    [0.54, 0.62, 0.68, 0.75],
+    [0, 1, 1, 0]
+  );
+  const text1Y = useTransform(
+    scrollYProgress,
+    [0.54, 0.63],
+    ["22px", "0px"]
+  );
+
+  // ── Phase 5: "Experience Méchante Cabane" — fade in, hold, fade out ─────
+  const text2Opacity = useTransform(
+    scrollYProgress,
+    [0.77, 0.85, 0.90, 0.96],
+    [0, 1, 1, 0]
+  );
+  const text2Y = useTransform(
+    scrollYProgress,
+    [0.77, 0.85],
+    ["22px", "0px"]
+  );
 
   return (
-    // Tall scroll container — 280vh gives comfortable scroll pacing
-    <section ref={containerRef} className="relative" style={{ height: "280vh" }}>
-      {/* Sticky viewport — stays fixed while user scrolls */}
+    // 550vh — generous room for all 5 animation phases
+    <section ref={containerRef} className="relative" style={{ height: "550vh" }}>
+      {/* Sticky viewport — fixed while scrolling through the section */}
       <div className="sticky top-0 h-screen w-full overflow-hidden grain-overlay">
-        {/* Background image — scales on scroll for zoom-out effect */}
+
+        {/* ── Background image: continuous drone zoom-out ── */}
         <motion.div
           className="absolute inset-0 will-change-transform"
           style={{ scale: imageScale }}
         >
           <Image
-            src="https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=2560&auto=format&fit=crop"
-            alt="Aerial view of a peaceful cabin retreat surrounded by forest"
+            src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=2560&auto=format&fit=crop"
+            alt="Aerial drone view zooming out from a cabin retreat to reveal the full surrounding landscape"
             fill
             sizes="100vw"
             className="object-cover object-center"
@@ -133,11 +233,11 @@ function Hero() {
           />
         </motion.div>
 
-        {/* Gradient overlays */}
+        {/* Gradient overlays (unchanged) */}
         <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/20 to-black/60 z-1" />
         <div className="absolute inset-0 bg-black/25 z-1" />
 
-        {/* Hero content — moves up + fades + blurs on scroll */}
+        {/* ── Phase 1: Hero content (title / subtitle / CTA) ── */}
         <motion.div
           className="relative z-2 flex flex-col items-center justify-center h-full px-4 text-center will-change-transform"
           style={{
@@ -146,7 +246,6 @@ function Hero() {
             filter: contentFilter,
           }}
         >
-          {/* Title */}
           <h1
             className="text-white uppercase leading-none tracking-[0.08em] mb-36 select-none"
             style={{
@@ -161,7 +260,6 @@ function Hero() {
             Méchante Cabane
           </h1>
 
-          {/* Subtitle */}
           <p
             className="text-white/85 text-center max-w-lg md:max-w-xl leading-relaxed mb-10"
             style={{
@@ -175,7 +273,6 @@ function Hero() {
             warm autumn tones to serene winter silences.
           </p>
 
-          {/* CTA Link */}
           <Link
             href="#explore"
             className="group flex items-center gap-3 text-white/90 hover:text-white transition-colors duration-300"
@@ -192,7 +289,7 @@ function Hero() {
           </Link>
         </motion.div>
 
-        {/* Scroll Down Indicator — fades with content */}
+        {/* ── Scroll indicator (fades early, unchanged) ── */}
         <motion.div
           className="absolute bottom-8 left-1/2 -translate-x-1/2 z-2 flex flex-col items-center gap-3"
           style={{ opacity: indicatorOpacity }}
@@ -221,8 +318,14 @@ function Hero() {
           </Link>
         </motion.div>
 
-        {/* Phase 3 — Overlay content, bottom-left */}
+        {/* ── Phase 3: OverlayContent description (existing, now with fade-out) ── */}
         <OverlayContent opacity={overlayOpacity} y={overlayY} />
+
+        {/* ── Phase 4: Bottom-center 3-line text ── */}
+        <BottomCenterText opacity={text1Opacity} y={text1Y} />
+
+        {/* ── Phase 5: "Experience Méchante Cabane" center text ── */}
+        <ExperienceText opacity={text2Opacity} y={text2Y} />
       </div>
     </section>
   );
