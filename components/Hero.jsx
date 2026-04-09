@@ -106,7 +106,8 @@ function Hero() {
   const indicatorOpacity = useTransform(scrollYProgress, [0, 0.18], [1, 0]);
 
   // --- Phase 2: Image scale — zoom OUT effect (0.28 → 0.62) ---
-  const imageScale = useTransform(scrollYProgress, [0.28, 0.62], [1.05, 0.88]);
+  // Start above 1.0 and end at 1.0 so the image always fills the viewport (no side gaps)
+  const imageScale = useTransform(scrollYProgress, [0.28, 0.62], [1.2, 1.0]);
 
   // --- Phase 3: Overlay content appears bottom-left (0.6 → 0.82) ---
   const overlayOpacity = useTransform(scrollYProgress, [0.6, 0.82], [0, 1]);

@@ -99,7 +99,7 @@ function Navbar() {
             <li key={label}>
               <Link
                 href={href}
-                className={`relative flex items-center gap-1.5 text-sm tracking-[0.15em] uppercase font-light transition-opacity duration-200 hover:opacity-100 ${
+                className={`relative flex items-center gap-1.5 text-sm tracking-[0.15em] uppercase text-white font-light transition-opacity duration-200 hover:opacity-100 ${
                   active ? "opacity-100" : "opacity-60"
                 }`}
                 style={{ fontFamily: "var(--font-inter)" }}
