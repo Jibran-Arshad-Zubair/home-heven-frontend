@@ -196,7 +196,7 @@ function FAQSection() {
   const imageScale = useTransform(scrollYProgress, [0, 1], [1.07, 1.0]);
 
   // ── Reveal content: fades in + rises gently as curtain lifts ─────────────
-  const contentOpacity = useTransform(scrollYProgress, [0.3, 0.65], [0, 1]);
+ const contentOpacity = useTransform(scrollYProgress, [0.3, 0.65], [1, 1]);
   const contentY = useTransform(scrollYProgress, [0.3, 0.65], [36, 0]);
 
   const handleToggle = (index) => {
@@ -255,20 +255,7 @@ function FAQSection() {
             className="absolute inset-0 flex flex-col items-center justify-center px-6"
             style={{ opacity: contentOpacity, y: contentY }}
           >
-            {/* Eye-brow label */}
-            <span
-              style={{
-                fontFamily: "var(--font-inter)",
-                fontSize: "0.58rem",
-                letterSpacing: "0.32em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.42)",
-                display: "block",
-                marginBottom: "1.4rem",
-              }}
-            >
-              Reserve Your Escape
-            </span>
+          
 
             {/* Heading — 2 lines */}
             <h2
