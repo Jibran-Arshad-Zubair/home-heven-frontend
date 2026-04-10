@@ -148,7 +148,7 @@ function VideoSection() {
           >
             {/* Aerial mountain travel footage — Pexels free stock */}
             <source
-              src="https://videos.pexels.com/video-files/3571264/3571264-hd_1920_1080_30fps.mp4"
+              src="https://www.pexels.com/download/video/9240682/"
               type="video/mp4"
             />
           </video>
@@ -177,18 +177,7 @@ function VideoSection() {
             }}
           />
 
-          {/* Center text overlay — rises in after video fades in */}
-          <motion.div
-            className="absolute inset-0 flex flex-col items-center justify-center px-6"
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 28 }}
-            transition={{ duration: 1.2, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <span style={labelStyle}>The Journey Awaits</span>
-            <h2 style={headingStyle}>
-              Where Every Path<br />Tells a Story
-            </h2>
-          </motion.div>
+         
 
           {/* Corner markers + brand label */}
           <CurtainCorners />
