@@ -261,7 +261,7 @@ function FAQSection() {
             <h2
               style={{
                 fontFamily: "var(--font-cormorant)",
-                fontSize: "clamp(2.4rem, 5.5vw, 6.5rem)",
+                fontSize: "clamp(2.2rem, 5.5vw, 6.5rem)",
                 fontWeight: 300,
                 color: "white",
                 letterSpacing: "0.03em",
@@ -287,7 +287,7 @@ function FAQSection() {
                   background: "white",
                   color: "black",
                   fontFamily: "var(--font-inter)",
-                  fontSize: "0.62rem",
+                  fontSize: "0.72rem",
                   letterSpacing: "0.24em",
                   textTransform: "uppercase",
                   fontWeight: 500,
@@ -311,7 +311,7 @@ function FAQSection() {
                   background: "transparent",
                   color: "white",
                   fontFamily: "var(--font-inter)",
-                  fontSize: "0.62rem",
+                  fontSize: "0.72rem",
                   letterSpacing: "0.24em",
                   textTransform: "uppercase",
                   fontWeight: 400,
