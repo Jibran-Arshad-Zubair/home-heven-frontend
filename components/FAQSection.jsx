@@ -1,7 +1,18 @@
 "use client";
 
 import { memo, useState, useRef } from "react";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+} from "framer-motion";
+
+// ── Reveal image shown behind the FAQ curtain ─────────────────────────────────
+const REVEAL_IMAGE =
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2400&auto=format&fit=crop";
 
 // ── FAQ Data ───────────────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
@@ -35,21 +46,7 @@ const FAQ_ITEMS = [
     answer:
       "Bookings are made directly through our private reservation form, which opens seasonally. Priority access is given to returning guests. Sign up to our mailing list to be notified of upcoming availability windows.",
   },
-  {
-    question: "Are pets allowed at Méchante Cabane?",
-    answer:
-      "We welcome well-behaved dogs with prior arrangement. A small additional cleaning fee applies, and we ask that pets remain leashed when outside to respect the delicate forest ecosystem and local wildlife. Please mention your furry companion when booking.",
-  },
-  {
-    question: "What should I bring for my stay?",
-    answer:
-      "We provide all bedding, towels, basic toiletries, and kitchen essentials. We recommend bringing sturdy walking boots, layered clothing for unpredictable forest weather, a good book, a journal, and an open mind. A detailed packing list is shared upon booking confirmation.",
-  },
-  {
-    question: "Is there heating and electricity in the cabin?",
-    answer:
-      "Yes, the cabin is equipped with a wood-burning stove as the primary heat source (firewood provided), supplemented by solar-powered electricity for essential lighting and charging small devices. Hot water is available via a gas-powered system. The experience balances rustic authenticity with quiet comfort.",
-  },
+ 
 ];
 
 // ── Shared text styles — identical to ScrollStory & VideoSection ──────────────
@@ -179,164 +176,343 @@ const FAQItem = memo(function FAQItem({
 // ── Main Component ────────────────────────────────────────────────────────────
 function FAQSection() {
   const [openIndex, setOpenIndex] = useState(0);
+
+  // Single ref drives useInView (entrance), useScroll (curtain)
   const containerRef = useRef(null);
-  const isInView = useInView(containerRef, { amount: 0.1, once: true });
+
+  // Fires once when 10 % of the 200 vh canvas enters the viewport
+  const isInView = useInView(containerRef, { amount: 0.05, once: true });
+
+  // Scroll progress through the full 200 vh canvas
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  // ── FAQ curtain: slides from its natural position up by 100 vh ────────────
+  const curtainY = useTransform(scrollYProgress, [0, 1], ["0%", "-100%"]);
+
+  // ── Reveal image: subtle zoom-out as it's uncovered (feels alive) ─────────
+  const imageScale = useTransform(scrollYProgress, [0, 1], [1.07, 1.0]);
+
+  // ── Reveal content: fades in + rises gently as curtain lifts ─────────────
+  const contentOpacity = useTransform(scrollYProgress, [0.3, 0.65], [0, 1]);
+  const contentY = useTransform(scrollYProgress, [0.3, 0.65], [36, 0]);
 
   const handleToggle = (index) => {
     setOpenIndex((prev) => (prev === index ? null : index));
   };
 
   return (
+    // ── 200 vh canvas — first 100 vh FAQ is static, second 100 vh curtain rises
     <section
       ref={containerRef}
-      className="relative bg-black overflow-hidden"
-      style={{ minHeight: "100vh" }}
+      className="relative bg-black"
+      style={{ height: "200vh" }}
     >
-      {/* Corner decoration — consistent with other sections */}
-      <SectionCorners />
+      {/* ── Sticky viewport — locked to screen for the full 200 vh scroll ──── */}
+      <div className="sticky top-0 overflow-hidden" style={{ height: "100vh" }}>
 
-      {/* Top gradient — blends with VideoSection above */}
-      <div
-        className="absolute top-0 left-0 right-0 pointer-events-none"
-        style={{
-          height: "18vh",
-          background: "linear-gradient(to bottom, #000 0%, transparent 100%)",
-          zIndex: 1,
-        }}
-      />
+        {/* ════════════════════════════════════════════════════════════════════
+            LAYER 0 — Reveal image + contact content (always behind the curtain)
+        ════════════════════════════════════════════════════════════════════ */}
+        <motion.div className="absolute inset-0" style={{ scale: imageScale }}>
+          <Image
+            src={REVEAL_IMAGE}
+            alt="Contact — Méchante Cabane"
+            fill
+            sizes="100vw"
+            className="object-cover"
+            priority={false}
+          />
 
-      {/* Inner layout container */}
-      <div
-        className="relative flex flex-col md:flex-row w-full"
-        style={{
-          minHeight: "100vh",
-          zIndex: 2,
-        }}
-      >
-        {/* ── LEFT: Video (30%) - Full height ────────────────────────────────── */}
-        <motion.div
-          className="w-full md:w-[30%] shrink-0 flex flex-col"
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : -40 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {/* Video container - Full height */}
+          {/* Dark cinematic overlay */}
           <div
-            className="relative overflow-hidden w-full h-full"
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.52)" }}
+          />
+
+          {/* Top gradient — blends with the lifting FAQ curtain */}
+          <div
+            className="absolute top-0 left-0 right-0 pointer-events-none"
             style={{
-              minHeight: "100%",
+              height: "22vh",
+              background: "linear-gradient(to bottom, #000 0%, transparent 100%)",
             }}
+          />
+
+          {/* Bottom gradient */}
+          <div
+            className="absolute bottom-0 left-0 right-0 pointer-events-none"
+            style={{
+              height: "22vh",
+              background: "linear-gradient(to top, #000 0%, transparent 100%)",
+            }}
+          />
+
+          {/* ── Centered contact content — fades in as curtain lifts ───────── */}
+          <motion.div
+            className="absolute inset-0 flex flex-col items-center justify-center px-6"
+            style={{ opacity: contentOpacity, y: contentY }}
           >
-            <div
-              className="absolute top-8 left-8 z-20"
+            {/* Eye-brow label */}
+            <span
               style={{
-                padding: "0.5rem 0",
+                fontFamily: "var(--font-inter)",
+                fontSize: "0.58rem",
+                letterSpacing: "0.32em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.42)",
+                display: "block",
+                marginBottom: "1.4rem",
               }}
             >
-              <span
+              Reserve Your Escape
+            </span>
+
+            {/* Heading — 2 lines */}
+            <h2
+              style={{
+                fontFamily: "var(--font-cormorant)",
+                fontSize: "clamp(2.4rem, 5.5vw, 6.5rem)",
+                fontWeight: 300,
+                color: "white",
+                letterSpacing: "0.03em",
+                lineHeight: 1.1,
+                textAlign: "center",
+                marginBottom: "2.8rem",
+              }}
+            >
+              Get in touch with our team
+              <br />
+              or book your stay directly
+            </h2>
+
+            {/* CTA buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {/* Primary — solid white */}
+              <button
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0.9rem 2.6rem",
+                  background: "white",
+                  color: "black",
                   fontFamily: "var(--font-inter)",
-                  fontSize: "0.95rem",
-                  letterSpacing: "0.4em",
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.24em",
                   textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.85)",
-                  fontWeight: 600,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  border: "none",
+                  transition: "opacity 0.3s ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              >
+                Book Your Stay
+              </button>
+
+              {/* Secondary — outlined */}
+              <button
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0.9rem 2.6rem",
+                  background: "transparent",
+                  color: "white",
+                  fontFamily: "var(--font-inter)",
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.24em",
+                  textTransform: "uppercase",
+                  fontWeight: 400,
+                  cursor: "pointer",
+                  border: "1px solid rgba(255,255,255,0.45)",
+                  transition: "border-color 0.3s ease, opacity 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.9)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.45)";
                 }}
               >
-                FAQS
-              </span>
+                Contact Us
+              </button>
             </div>
-            {/* Corner viewfinder markers on the video */}
-            <span className="absolute top-3 left-3 w-4 h-4 border-t border-l border-white/20 pointer-events-none z-10" />
-            <span className="absolute top-3 right-3 w-4 h-4 border-t border-r border-white/20 pointer-events-none z-10" />
-            <span className="absolute bottom-3 left-3 w-4 h-4 border-b border-l border-white/20 pointer-events-none z-10" />
-            <span className="absolute bottom-3 right-3 w-4 h-4 border-b border-r border-white/20 pointer-events-none z-10" />
+          </motion.div>
+        </motion.div>
 
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              disablePictureInPicture
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ pointerEvents: "none" }}
-            >
-              {/* Peaceful forest / nature stock — Pexels free */}
-              <source
-                src="https://www.pexels.com/download/video/13724665/"
-                type="video/mp4"
-              />
-            </video>
+        {/* ════════════════════════════════════════════════════════════════════
+            LAYER 1 — FAQ curtain
+            - Fades in on entrance (isInView)
+            - Translates upward via curtainY as user scrolls
+            - overflow:hidden on parent clips it cleanly as it exits
+        ════════════════════════════════════════════════════════════════════ */}
+        <motion.div
+          className="absolute inset-0"
+          style={{ y: curtainY, zIndex: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isInView ? 1 : 0 }}
+          transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* ── Original FAQ section content (unchanged) ─────────────────── */}
+          <div
+            className="relative bg-black overflow-hidden"
+            style={{ height: "100%" }}
+          >
+            {/* Corner decoration */}
+            <SectionCorners />
 
-            {/* Dark overlay — cinematic feel */}
+            {/* Top gradient — blends with VideoSection above */}
             <div
-              className="absolute inset-0"
-              style={{ background: "rgba(0,0,0,0.38)" }}
-            />
-
-            {/* Bottom fade — blends into section bg */}
-            <div
-              className="absolute bottom-0 left-0 right-0"
+              className="absolute top-0 left-0 right-0 pointer-events-none"
               style={{
-                height: "40%",
+                height: "18vh",
                 background:
-                  "linear-gradient(to top, #000 0%, transparent 100%)",
+                  "linear-gradient(to bottom, #000 0%, transparent 100%)",
+                zIndex: 1,
               }}
             />
+
+            {/* Inner layout container */}
+            <div
+              className="relative flex flex-col md:flex-row w-full"
+              style={{
+                height: "100%",
+                zIndex: 2,
+              }}
+            >
+              {/* ── LEFT: Video (30 %) - Full height ──────────────────────── */}
+              <motion.div
+                className="w-full md:w-[30%] shrink-0 flex flex-col"
+                initial={{ opacity: 0, x: -40 }}
+                animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : -40 }}
+                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {/* Video container — full height */}
+                <div
+                  className="relative overflow-hidden w-full h-full"
+                  style={{ minHeight: "100%" }}
+                >
+                  <div
+                    className="absolute top-8 left-8 z-20"
+                    style={{ padding: "0.5rem 0" }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "var(--font-inter)",
+                        fontSize: "0.95rem",
+                        letterSpacing: "0.4em",
+                        textTransform: "uppercase",
+                        color: "rgba(255,255,255,0.85)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      FAQS
+                    </span>
+                  </div>
+
+                  {/* Corner viewfinder markers on the video */}
+                  <span className="absolute top-3 left-3 w-4 h-4 border-t border-l border-white/20 pointer-events-none z-10" />
+                  <span className="absolute top-3 right-3 w-4 h-4 border-t border-r border-white/20 pointer-events-none z-10" />
+                  <span className="absolute bottom-3 left-3 w-4 h-4 border-b border-l border-white/20 pointer-events-none z-10" />
+                  <span className="absolute bottom-3 right-3 w-4 h-4 border-b border-r border-white/20 pointer-events-none z-10" />
+
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    disablePictureInPicture
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    <source
+                      src="https://www.pexels.com/download/video/13724665/"
+                      type="video/mp4"
+                    />
+                  </video>
+
+                  {/* Dark overlay */}
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: "rgba(0,0,0,0.38)" }}
+                  />
+
+                  {/* Bottom fade */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0"
+                    style={{
+                      height: "40%",
+                      background:
+                        "linear-gradient(to top, #000 0%, transparent 100%)",
+                    }}
+                  />
+                </div>
+              </motion.div>
+
+              {/* Vertical divider (hidden on mobile) */}
+              <motion.div
+                className="hidden md:block shrink-0 self-stretch"
+                style={{ width: "1px", background: "rgba(255,255,255,0.08)" }}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: isInView ? 1 : 0 }}
+                transition={{
+                  duration: 1.2,
+                  delay: 0.2,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              />
+
+              {/* ── RIGHT: FAQs (70 %) ──────────────────────────────────── */}
+              <div
+                className="w-full md:w-[70%] flex flex-col justify-center overflow-y-auto"
+                style={{
+                  paddingLeft: "clamp(1.5rem, 4vw, 5rem)",
+                  paddingRight: "clamp(2rem, 5vw, 5rem)",
+                  paddingTop: "clamp(5rem, 10vh, 9rem)",
+                  paddingBottom: "clamp(4rem, 8vh, 7rem)",
+                }}
+              >
+                {/* FAQ accordion list */}
+                <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                  {FAQ_ITEMS.map((item, i) => (
+                    <FAQItem
+                      key={item.question}
+                      question={item.question}
+                      answer={item.answer}
+                      index={i}
+                      isOpen={openIndex === i}
+                      onToggle={() => handleToggle(i)}
+                      isInView={isInView}
+                    />
+                  ))}
+                </div>
+
+                {/* Subtle footnote */}
+                <motion.p
+                  className="mt-8"
+                  style={{
+                    fontFamily: "var(--font-inter)",
+                    fontSize: "0.52rem",
+                    letterSpacing: "0.28em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.22)",
+                  }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: isInView ? 1 : 0 }}
+                  transition={{ duration: 1, delay: 0.7 }}
+                >
+                  Further enquiries welcome — contact@mechantecabane.com
+                </motion.p>
+              </div>
+            </div>
           </div>
         </motion.div>
 
-        {/* Vertical divider (hidden on mobile) */}
-        <motion.div
-          className="hidden md:block shrink-0 self-stretch"
-          style={{ width: "1px", background: "rgba(255,255,255,0.08)" }}
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: isInView ? 1 : 0 }}
-          transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        />
-
-        {/* ── RIGHT: FAQs (70%) ─────────────────────────────────────────────── */}
-        <div
-          className="w-full md:w-[70%] flex flex-col justify-center"
-          style={{
-            paddingLeft: "clamp(1.5rem, 4vw, 5rem)",
-            paddingRight: "clamp(2rem, 5vw, 5rem)",
-            paddingTop: "clamp(5rem, 10vh, 9rem)",
-            paddingBottom: "clamp(4rem, 8vh, 7rem)",
-          }}
-        >
-          {/* Bottom border on last item */}
-          <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-            {FAQ_ITEMS.map((item, i) => (
-              <FAQItem
-                key={item.question}
-                question={item.question}
-                answer={item.answer}
-                index={i}
-                isOpen={openIndex === i}
-                onToggle={() => handleToggle(i)}
-                isInView={isInView}
-              />
-            ))}
-          </div>
-
-          {/* Subtle footnote */}
-          <motion.p
-            className="mt-8"
-            style={{
-              fontFamily: "var(--font-inter)",
-              fontSize: "0.52rem",
-              letterSpacing: "0.28em",
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.22)",
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isInView ? 1 : 0 }}
-            transition={{ duration: 1, delay: 0.7 }}
-          >
-            Further enquiries welcome — contact@mechantecabane.com
-          </motion.p>
-        </div>
       </div>
     </section>
   );
