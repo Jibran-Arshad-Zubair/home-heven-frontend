@@ -227,6 +227,25 @@ function FAQSection() {
               minHeight: "100%",
             }}
           >
+            <div
+              className="absolute top-8 left-8 z-20"
+              style={{
+                padding: "0.5rem 0",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "var(--font-inter)",
+                  fontSize: "0.95rem",
+                  letterSpacing: "0.4em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.85)",
+                  fontWeight: 600,
+                }}
+              >
+                FAQS
+              </span>
+            </div>
             {/* Corner viewfinder markers on the video */}
             <span className="absolute top-3 left-3 w-4 h-4 border-t border-l border-white/20 pointer-events-none z-10" />
             <span className="absolute top-3 right-3 w-4 h-4 border-t border-r border-white/20 pointer-events-none z-10" />
@@ -260,7 +279,8 @@ function FAQSection() {
               className="absolute bottom-0 left-0 right-0"
               style={{
                 height: "40%",
-                background: "linear-gradient(to top, #000 0%, transparent 100%)",
+                background:
+                  "linear-gradient(to top, #000 0%, transparent 100%)",
               }}
             />
           </div>
@@ -285,7 +305,6 @@ function FAQSection() {
             paddingBottom: "clamp(4rem, 8vh, 7rem)",
           }}
         >
-          
           {/* Bottom border on last item */}
           <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
             {FAQ_ITEMS.map((item, i) => (
