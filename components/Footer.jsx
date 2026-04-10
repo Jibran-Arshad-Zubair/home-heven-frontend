@@ -84,45 +84,12 @@ function Footer() {
         >
           {/* Logo mark + wordmark */}
           <div className="flex items-center gap-3">
-            <AntlerIcon size={32} />
-            <div>
-              <p
-                style={{
-                  fontFamily: "var(--font-cormorant)",
-                  fontSize: "clamp(1.1rem, 1.8vw, 1.4rem)",
-                  fontWeight: 400,
-                  color: "white",
-                  letterSpacing: "0.08em",
-                  lineHeight: 1.1,
-                }}
-              >
-                Méchante Cabane
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-inter)",
-                  fontSize: "0.48rem",
-                  letterSpacing: "0.32em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.32)",
-                  marginTop: "0.25rem",
-                }}
-              >
-                Luxury Forest Retreat
-              </p>
-            </div>
+            <AntlerIcon size={52} />
+           
           </div>
         </div>
 
-        {/* Vertical divider (desktop only) */}
-        <div
-          className="hidden md:block shrink-0 self-stretch"
-          style={{
-            width: "1px",
-            background: "rgba(255,255,255,0.08)",
-            marginRight: "clamp(2rem, 4vw, 4rem)",
-          }}
-        />
+      
 
         {/* ── RIGHT: 3 columns (60%) ───────────────────────────────────── */}
         <div
@@ -181,7 +148,7 @@ function Footer() {
       {/* ── Bottom bar ──────────────────────────────────────────────────────── */}
       <div
         style={{
-          borderTop: "2px solid rgba(255,255,255,0.07)",
+          borderTop: "1px solid rgba(255,255,255,0.07)",
           paddingTop: "1.4rem",
           paddingBottom: "1.6rem",
           paddingLeft: "clamp(2rem, 5vw, 5rem)",
