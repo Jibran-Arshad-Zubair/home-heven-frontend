@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -153,6 +153,39 @@ const ExperienceText = memo(function ExperienceText({ opacity, y }) {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
   const containerRef = useRef(null);
+  const bwLayerRef   = useRef(null);
+  const rafRef       = useRef(null);
+  const mousePosRef  = useRef({ x: -9999, y: -9999 });
+
+  // ── Cursor reveal: track mouse, punch a hole in the B&W layer via mask ──
+  const handleMouseMove = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    mousePosRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      if (bwLayerRef.current) {
+        const { x, y } = mousePosRef.current;
+        const mask = `radial-gradient(circle 180px at ${x}px ${y}px, transparent 0%, transparent 20%, rgba(0,0,0,0.55) 60%, black 100%)`;
+        bwLayerRef.current.style.webkitMaskImage = mask;
+        bwLayerRef.current.style.maskImage = mask;
+      }
+      rafRef.current = null;
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (bwLayerRef.current) {
+      bwLayerRef.current.style.webkitMaskImage = "";
+      bwLayerRef.current.style.maskImage = "";
+    }
+  }, []);
 
   // Track scroll progress across the full 550vh container
   const { scrollYProgress } = useScroll({
@@ -216,7 +249,11 @@ function Hero() {
     // 550vh — generous room for all 5 animation phases
     <section ref={containerRef} className="relative" style={{ height: "550vh" }}>
       {/* Sticky viewport — fixed while scrolling through the section */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden grain-overlay">
+      <div
+        className="sticky top-0 h-screen w-full overflow-hidden grain-overlay"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
 
         {/* ── Background image: continuous drone zoom-out ── */}
         <motion.div
@@ -228,8 +265,24 @@ function Hero() {
             alt="Aerial drone view zooming out from a cabin retreat to reveal the full surrounding landscape"
             fill
             sizes="100vw"
-            className="object-cover object-center grayscale"
+            className="object-cover object-center"
             priority
+          />
+        </motion.div>
+
+        {/* ── B&W layer: same zoom, masked by cursor to reveal color below ── */}
+        <motion.div
+          ref={bwLayerRef}
+          className="absolute inset-0 will-change-transform"
+          style={{ scale: imageScale }}
+        >
+          <Image
+            src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=2560&auto=format&fit=crop"
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="100vw"
+            className="object-cover object-center grayscale"
           />
         </motion.div>
 
