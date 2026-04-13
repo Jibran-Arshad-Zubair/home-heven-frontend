@@ -1,9 +1,16 @@
 "use client";
 
-import { memo, useRef, useCallback } from "react";
+import { memo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  useSpring,
+  useMotionTemplate,
+} from "framer-motion";
 
 // ─── AntlerIcon (unchanged) ──────────────────────────────────────────────────
 const AntlerIcon = memo(function AntlerIcon({ size = 28 }) {
@@ -153,83 +160,38 @@ const ExperienceText = memo(function ExperienceText({ opacity, y }) {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
   const containerRef = useRef(null);
-  const bwLayerRef    = useRef(null);
-  const rafRef        = useRef(null);   // throttle move updates
-  const fadeRafRef    = useRef(null);   // fade-back animation loop
-  const mousePosRef   = useRef({ x: -9999, y: -9999 });
-  const strengthRef   = useRef(0);      // 0 = full B&W, 1 = full color reveal
 
-  // ── Writes the radial mask at the given cursor position & reveal strength ──
-  const applyMask = useCallback((x, y, strength) => {
-    if (!bwLayerRef.current) return;
-    if (strength <= 0.005) {
-      // Fully hidden — remove mask entirely (clean full B&W)
-      bwLayerRef.current.style.webkitMaskImage = "";
-      bwLayerRef.current.style.maskImage = "";
-      return;
-    }
-    // Center is fully transparent (color shows), edges are black (B&W shows).
-    // Interpolate center & mid-stop alpha by strength so fade-back animates smoothly.
-    const c  = (1 - strength).toFixed(4);              // center  transparent → black
-    const m  = (1 - strength * 0.42).toFixed(4);       // mid-ring soft shoulder
-    const mask = [
-      `radial-gradient(circle 320px at ${x}px ${y}px,`,
-      ` rgba(0,0,0,${c})  0%,`,
-      ` rgba(0,0,0,${c}) 28%,`,   // wide flat core
-      ` rgba(0,0,0,${m}) 62%,`,   // soft feathered shoulder
-      ` black             88%,`,
-      ` black            100%)`,
-    ].join("");
-    bwLayerRef.current.style.webkitMaskImage = mask;
-    bwLayerRef.current.style.maskImage = mask;
-  }, []);
+  // ── Framer Motion cursor reveal ──────────────────────────────────────────
+  // Raw cursor position (updates instantly on move)
+  const cursorX = useMotionValue(-9999);
+  const cursorY = useMotionValue(-9999);
+  // Reveal strength: 1 = color visible, 0 = full B&W
+  const revealStrength = useMotionValue(0);
 
-  // ── Mouse move: reveal instantly, cancel any ongoing fade-back ───────────
-  const handleMouseMove = useCallback((e) => {
-    // Cancel fade-back if cursor re-enters
-    if (fadeRafRef.current) {
-      cancelAnimationFrame(fadeRafRef.current);
-      fadeRafRef.current = null;
-    }
+  // Spring: smooth cursor follow — slight lag gives the "duster" feel
+  const smoothX = useSpring(cursorX, { damping: 28, stiffness: 180, mass: 0.5 });
+  const smoothY = useSpring(cursorY, { damping: 28, stiffness: 180, mass: 0.5 });
+
+  // Spring: slow fade-back when cursor leaves (high damping = no bounce)
+  const smoothStrength = useSpring(revealStrength, { damping: 22, stiffness: 70 });
+
+  // Derive gradient alpha stops from reveal strength (0→1 maps black→transparent)
+  const centerAlpha = useTransform(smoothStrength, [0, 1], [1, 0]);
+  const midAlpha    = useTransform(smoothStrength, [0, 1], [1, 0.4]);
+
+  // Build the full mask string reactively — Framer Motion updates DOM directly
+  const bwMask = useMotionTemplate`radial-gradient(circle 320px at ${smoothX}px ${smoothY}px, rgba(0,0,0,${centerAlpha}) 0%, rgba(0,0,0,${centerAlpha}) 28%, rgba(0,0,0,${midAlpha}) 65%, black 90%)`;
+
+  const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    mousePosRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-    strengthRef.current = 1;
-    if (rafRef.current) return;                        // already a frame queued
-    rafRef.current = requestAnimationFrame(() => {
-      applyMask(mousePosRef.current.x, mousePosRef.current.y, 1);
-      rafRef.current = null;
-    });
-  }, [applyMask]);
+    cursorX.set(e.clientX - rect.left);
+    cursorY.set(e.clientY - rect.top);
+    revealStrength.set(1);
+  };
 
-  // ── Mouse leave: animate reveal strength 1 → 0 with ease-out cubic ───────
-  const handleMouseLeave = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    const DURATION   = 750;          // ms for full fade-back
-    const startPower = strengthRef.current;
-    const lastX      = mousePosRef.current.x;
-    const lastY      = mousePosRef.current.y;
-    const startTime  = performance.now();
-
-    const tick = (now) => {
-      const t       = Math.min((now - startTime) / DURATION, 1);
-      const eased   = 1 - Math.pow(1 - t, 3);         // ease-out cubic
-      const current = startPower * (1 - eased);
-      strengthRef.current = current;
-      applyMask(lastX, lastY, current);
-      if (t < 1) {
-        fadeRafRef.current = requestAnimationFrame(tick);
-      } else {
-        fadeRafRef.current = null;
-      }
-    };
-    fadeRafRef.current = requestAnimationFrame(tick);
-  }, [applyMask]);
+  const handleMouseLeave = () => {
+    revealStrength.set(0);
+  };
 
   // Track scroll progress across the full 550vh container
   const { scrollYProgress } = useScroll({
@@ -316,9 +278,12 @@ function Hero() {
 
         {/* ── B&W layer: same zoom, masked by cursor to reveal color below ── */}
         <motion.div
-          ref={bwLayerRef}
           className="absolute inset-0 will-change-transform"
-          style={{ scale: imageScale }}
+          style={{
+            scale: imageScale,
+            WebkitMaskImage: bwMask,
+            maskImage: bwMask,
+          }}
         >
           <Image
             src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=2560&auto=format&fit=crop"
