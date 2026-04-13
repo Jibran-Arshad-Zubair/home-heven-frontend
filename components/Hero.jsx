@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   motion,
+  animate,
   useScroll,
   useTransform,
   useMotionValue,
@@ -161,36 +162,37 @@ const ExperienceText = memo(function ExperienceText({ opacity, y }) {
 function Hero() {
   const containerRef = useRef(null);
 
-  // ── Framer Motion cursor reveal ──────────────────────────────────────────
-  // Raw cursor position (updates instantly on move)
-  const cursorX = useMotionValue(-9999);
-  const cursorY = useMotionValue(-9999);
-  // Reveal strength: 1 = color visible, 0 = full B&W
-  const revealStrength = useMotionValue(0);
+  // ── Clip-path cursor reveal (water-drop / foam effect) ─────────────────
+  const cursorX    = useMotionValue(-9999);
+  const cursorY    = useMotionValue(-9999);
+  const clipRadius = useMotionValue(0);       // 0 = hidden, 180 = full reveal
+  const idleTimer  = useRef(null);
 
-  // Spring: smooth cursor follow — slight lag gives the "duster" feel
-  const smoothX = useSpring(cursorX, { damping: 28, stiffness: 180, mass: 0.5 });
-  const smoothY = useSpring(cursorY, { damping: 28, stiffness: 180, mass: 0.5 });
+  // Glow trail: lags behind cursor — mimics the lerp * 0.08 from the HTML demo
+  const glowX = useSpring(cursorX, { damping: 40, stiffness: 50, mass: 1.5 });
+  const glowY = useSpring(cursorY, { damping: 40, stiffness: 50, mass: 1.5 });
 
-  // Spring: slow fade-back when cursor leaves (high damping = no bounce)
-  const smoothStrength = useSpring(revealStrength, { damping: 22, stiffness: 70 });
-
-  // Derive gradient alpha stops from reveal strength (0→1 maps black→transparent)
-  const centerAlpha = useTransform(smoothStrength, [0, 1], [1, 0]);
-  const midAlpha    = useTransform(smoothStrength, [0, 1], [1, 0.4]);
-
-  // Build the full mask string reactively — Framer Motion updates DOM directly
-  const bwMask = useMotionTemplate`radial-gradient(circle 320px at ${smoothX}px ${smoothY}px, rgba(0,0,0,${centerAlpha}) 0%, rgba(0,0,0,${centerAlpha}) 28%, rgba(0,0,0,${midAlpha}) 65%, black 90%)`;
+  // Live clip-path string — Framer Motion drives the DOM directly, zero re-renders
+  const colorClip = useMotionTemplate`circle(${clipRadius}px at ${cursorX}px ${cursorY}px)`;
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     cursorX.set(e.clientX - rect.left);
     cursorY.set(e.clientY - rect.top);
-    revealStrength.set(1);
+
+    // Snap circle open with a spring burst
+    animate(clipRadius, 180, { type: "spring", stiffness: 280, damping: 28 });
+
+    // Collapse back after 140 ms of no movement
+    clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => {
+      animate(clipRadius, 0, { duration: 0.55, ease: [0.22, 1, 0.36, 1] });
+    }, 140);
   };
 
   const handleMouseLeave = () => {
-    revealStrength.set(0);
+    clearTimeout(idleTimer.current);
+    animate(clipRadius, 0, { duration: 0.4, ease: "easeOut" });
   };
 
   // Track scroll progress across the full 550vh container
@@ -261,7 +263,7 @@ function Hero() {
         onMouseLeave={handleMouseLeave}
       >
 
-        {/* ── Background image: continuous drone zoom-out ── */}
+        {/* ── Layer 1 (bottom): B&W image — always visible ── */}
         <motion.div
           className="absolute inset-0 will-change-transform"
           style={{ scale: imageScale }}
@@ -271,19 +273,15 @@ function Hero() {
             alt="Aerial drone view zooming out from a cabin retreat to reveal the full surrounding landscape"
             fill
             sizes="100vw"
-            className="object-cover object-center"
+            className="object-cover object-center grayscale"
             priority
           />
         </motion.div>
 
-        {/* ── B&W layer: same zoom, masked by cursor to reveal color below ── */}
+        {/* ── Layer 2: full-color image — revealed only inside the clip circle ── */}
         <motion.div
           className="absolute inset-0 will-change-transform"
-          style={{
-            scale: imageScale,
-            WebkitMaskImage: bwMask,
-            maskImage: bwMask,
-          }}
+          style={{ scale: imageScale, clipPath: colorClip }}
         >
           <Image
             src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=2560&auto=format&fit=crop"
@@ -291,9 +289,25 @@ function Hero() {
             aria-hidden="true"
             fill
             sizes="100vw"
-            className="object-cover object-center grayscale"
+            className="object-cover object-center"
           />
         </motion.div>
+
+        {/* ── Glow trail: lags behind cursor, sits above images ── */}
+        <motion.div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: 120,
+            height: 120,
+            background: "radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 70%)",
+            filter: "blur(12px)",
+            left: glowX,
+            top: glowY,
+            x: "-50%",
+            y: "-50%",
+            zIndex: 1,
+          }}
+        />
 
         {/* Gradient overlays (unchanged) */}
         <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/20 to-black/60 z-1" />
