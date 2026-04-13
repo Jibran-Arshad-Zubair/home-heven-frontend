@@ -228,7 +228,7 @@ function Hero() {
             alt="Aerial drone view zooming out from a cabin retreat to reveal the full surrounding landscape"
             fill
             sizes="100vw"
-            className="object-cover object-center"
+            className="object-cover object-center grayscale"
             priority
           />
         </motion.div>
@@ -237,7 +237,7 @@ function Hero() {
         <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/20 to-black/60 z-1" />
         <div className="absolute inset-0 bg-black/25 z-1" />
 
-        {/* ── Phase 1: Hero content (title / subtitle / CTA) ── */}
+{/* ── Phase 1: Hero content (title / subtitle / CTA) ── */}
         <motion.div
           className="relative z-2 flex flex-col items-center justify-center h-full px-4 text-center will-change-transform"
           style={{
