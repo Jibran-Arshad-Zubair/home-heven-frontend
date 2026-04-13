@@ -153,39 +153,83 @@ const ExperienceText = memo(function ExperienceText({ opacity, y }) {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
   const containerRef = useRef(null);
-  const bwLayerRef   = useRef(null);
-  const rafRef       = useRef(null);
-  const mousePosRef  = useRef({ x: -9999, y: -9999 });
+  const bwLayerRef    = useRef(null);
+  const rafRef        = useRef(null);   // throttle move updates
+  const fadeRafRef    = useRef(null);   // fade-back animation loop
+  const mousePosRef   = useRef({ x: -9999, y: -9999 });
+  const strengthRef   = useRef(0);      // 0 = full B&W, 1 = full color reveal
 
-  // ── Cursor reveal: track mouse, punch a hole in the B&W layer via mask ──
+  // ── Writes the radial mask at the given cursor position & reveal strength ──
+  const applyMask = useCallback((x, y, strength) => {
+    if (!bwLayerRef.current) return;
+    if (strength <= 0.005) {
+      // Fully hidden — remove mask entirely (clean full B&W)
+      bwLayerRef.current.style.webkitMaskImage = "";
+      bwLayerRef.current.style.maskImage = "";
+      return;
+    }
+    // Center is fully transparent (color shows), edges are black (B&W shows).
+    // Interpolate center & mid-stop alpha by strength so fade-back animates smoothly.
+    const c  = (1 - strength).toFixed(4);              // center  transparent → black
+    const m  = (1 - strength * 0.42).toFixed(4);       // mid-ring soft shoulder
+    const mask = [
+      `radial-gradient(circle 320px at ${x}px ${y}px,`,
+      ` rgba(0,0,0,${c})  0%,`,
+      ` rgba(0,0,0,${c}) 28%,`,   // wide flat core
+      ` rgba(0,0,0,${m}) 62%,`,   // soft feathered shoulder
+      ` black             88%,`,
+      ` black            100%)`,
+    ].join("");
+    bwLayerRef.current.style.webkitMaskImage = mask;
+    bwLayerRef.current.style.maskImage = mask;
+  }, []);
+
+  // ── Mouse move: reveal instantly, cancel any ongoing fade-back ───────────
   const handleMouseMove = useCallback((e) => {
+    // Cancel fade-back if cursor re-enters
+    if (fadeRafRef.current) {
+      cancelAnimationFrame(fadeRafRef.current);
+      fadeRafRef.current = null;
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     mousePosRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     };
-    if (rafRef.current) return;
+    strengthRef.current = 1;
+    if (rafRef.current) return;                        // already a frame queued
     rafRef.current = requestAnimationFrame(() => {
-      if (bwLayerRef.current) {
-        const { x, y } = mousePosRef.current;
-        const mask = `radial-gradient(circle 180px at ${x}px ${y}px, transparent 0%, transparent 20%, rgba(0,0,0,0.55) 60%, black 100%)`;
-        bwLayerRef.current.style.webkitMaskImage = mask;
-        bwLayerRef.current.style.maskImage = mask;
-      }
+      applyMask(mousePosRef.current.x, mousePosRef.current.y, 1);
       rafRef.current = null;
     });
-  }, []);
+  }, [applyMask]);
 
+  // ── Mouse leave: animate reveal strength 1 → 0 with ease-out cubic ───────
   const handleMouseLeave = useCallback(() => {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-    if (bwLayerRef.current) {
-      bwLayerRef.current.style.webkitMaskImage = "";
-      bwLayerRef.current.style.maskImage = "";
-    }
-  }, []);
+    const DURATION   = 750;          // ms for full fade-back
+    const startPower = strengthRef.current;
+    const lastX      = mousePosRef.current.x;
+    const lastY      = mousePosRef.current.y;
+    const startTime  = performance.now();
+
+    const tick = (now) => {
+      const t       = Math.min((now - startTime) / DURATION, 1);
+      const eased   = 1 - Math.pow(1 - t, 3);         // ease-out cubic
+      const current = startPower * (1 - eased);
+      strengthRef.current = current;
+      applyMask(lastX, lastY, current);
+      if (t < 1) {
+        fadeRafRef.current = requestAnimationFrame(tick);
+      } else {
+        fadeRafRef.current = null;
+      }
+    };
+    fadeRafRef.current = requestAnimationFrame(tick);
+  }, [applyMask]);
 
   // Track scroll progress across the full 550vh container
   const { scrollYProgress } = useScroll({
