@@ -194,20 +194,21 @@ function Hero() {
     }
 
     // quickTo returns a function you call with the target value — ultra-fast path, no tween object overhead
+    // Very tight tracking — eraser sticks close to cursor (heavy/physical feel)
     refs.xTo = gsap.quickTo(state, "x", {
-      duration: 0.38,
+      duration: 0.16,
       ease: "power3.out",
       onUpdate: applyClipPath,
     });
     refs.yTo = gsap.quickTo(state, "y", {
-      duration: 0.38,
+      duration: 0.16,
       ease: "power3.out",
       onUpdate: applyClipPath,
     });
 
-    // Glow lags further behind for depth — slowest layer
-    refs.glowXTo = gsap.quickTo(glowEl, "x", { duration: 1.15, ease: "power2.out" });
-    refs.glowYTo = gsap.quickTo(glowEl, "y", { duration: 1.15, ease: "power2.out" });
+    // Glow lags slightly — rubber friction haze behind the eraser
+    refs.glowXTo = gsap.quickTo(glowEl, "x", { duration: 0.6, ease: "power2.out" });
+    refs.glowYTo = gsap.quickTo(glowEl, "y", { duration: 0.6, ease: "power2.out" });
 
     return () => {
       gsap.killTweensOf(state);
@@ -237,11 +238,11 @@ function Hero() {
     }
 
     // Only launch an expand tween if the circle isn't already fully open
-    if (!refs.expandTween?.isActive() && state.r < 578) {
+    if (!refs.expandTween?.isActive() && state.r < 448) {
       refs.expandTween = gsap.to(state, {
-        r: 580,
-        duration: 0.6,
-        ease: "power2.out",
+        r: 650,
+        duration: 0.12,
+        ease: "power3.out",
         onUpdate: () => {
           if (colorLayerRef.current) {
             colorLayerRef.current.style.clipPath = `circle(${state.r.toFixed(1)}px at ${state.x.toFixed(1)}px ${state.y.toFixed(1)}px)`;
@@ -256,7 +257,7 @@ function Hero() {
       if (refs.expandTween?.isActive()) refs.expandTween.kill();
       refs.collapseTween = gsap.to(state, {
         r: 0,
-        duration: 0.9,
+        duration: 0.65,
         ease: "power2.inOut",
         onUpdate: () => {
           if (colorLayerRef.current) {
@@ -264,7 +265,7 @@ function Hero() {
           }
         },
       });
-    }, 260);
+    }, 350);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
@@ -275,7 +276,7 @@ function Hero() {
     if (refs.expandTween?.isActive()) refs.expandTween.kill();
     refs.collapseTween = gsap.to(state, {
       r: 0,
-      duration: 0.9,
+      duration: 0.65,
       ease: "power2.inOut",
       onUpdate: () => {
         if (colorLayerRef.current) {
@@ -381,13 +382,13 @@ function Hero() {
           ref={glowRef}
           className="absolute rounded-full pointer-events-none"
           style={{
-            width: 380,
-            height: 380,
+            width: 300,
+            height: 300,
             left: 0,
             top: 0,
             background:
-              "radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 45%, transparent 70%)",
-            filter: "blur(18px)",
+              "radial-gradient(circle, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.14) 40%, rgba(255,255,255,0.04) 65%, transparent 80%)",
+            filter: "blur(10px)",
             zIndex: 1,
             willChange: "transform",
           }}
