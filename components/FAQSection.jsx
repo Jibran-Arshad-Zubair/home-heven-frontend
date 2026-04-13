@@ -51,7 +51,7 @@ const FAQ_ITEMS = [
 
 // ── Shared text styles — identical to ScrollStory & VideoSection ──────────────
 const questionStyle = {
-  fontFamily: "var(--font-cormorant)",
+  fontFamily: "var(--font-satoshi)",
   fontSize: "clamp(1.1rem, 1.8vw, 1.45rem)",
   fontWeight: 400,
   color: "white",
@@ -260,7 +260,7 @@ function FAQSection() {
             {/* Heading — 2 lines */}
             <h2
               style={{
-                fontFamily: "var(--font-cormorant)",
+                fontFamily: "var(--font-satoshi)",
                 fontSize: "clamp(2.2rem, 5.5vw, 6.5rem)",
                 fontWeight: 300,
                 color: "white",

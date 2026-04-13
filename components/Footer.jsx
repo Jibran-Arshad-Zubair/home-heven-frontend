@@ -100,7 +100,7 @@ function Footer() {
               {/* Column heading */}
               <p
                 style={{
-                  fontFamily: "var(--font-inter)",
+                  fontFamily: "var(--font-satoshi)",
                   fontSize: "0.6rem",
                   letterSpacing: "0.3em",
                   textTransform: "uppercase",

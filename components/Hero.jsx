@@ -125,7 +125,7 @@ const ExperienceText = memo(function ExperienceText({ opacity, y }) {
         </p>
         <h2
           style={{
-            fontFamily: "var(--font-cormorant)",
+            fontFamily: "var(--font-satoshi)",
             fontSize: "clamp(2rem, 5.5vw, 5rem)",
             fontWeight: 300,
             letterSpacing: "0.06em",
@@ -249,7 +249,7 @@ function Hero() {
           <h1
             className="text-white uppercase leading-none tracking-[0.08em] mb-36 select-none"
             style={{
-              fontFamily: "var(--font-cormorant)",
+              fontFamily: "var(--font-satoshi)",
               fontSize: "clamp(2.5rem, 6vw, 6rem)",
               fontWeight: 300,
               textShadow:

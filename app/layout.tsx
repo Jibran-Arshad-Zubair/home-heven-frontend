@@ -26,6 +26,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${cormorant.variable} ${inter.variable} h-full`}
     >
+      <head>
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link
+          href="https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400,300&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-full bg-black text-white antialiased">
         {children}
       </body>

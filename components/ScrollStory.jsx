@@ -43,7 +43,7 @@ const STICKY_IMAGE =
 
 // ── Shared text styles ─────────────────────────────────────────────────────────
 const wordStyle = {
-  fontFamily: "var(--font-cormorant)",
+  fontFamily: "var(--font-satoshi)",
   fontSize: "clamp(3rem, 6.5vw, 8.5rem)",
   fontWeight: 300,
   color: "white",
