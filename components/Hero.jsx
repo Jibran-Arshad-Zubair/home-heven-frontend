@@ -1,16 +1,13 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { gsap } from "gsap";
 import {
   motion,
-  animate,
   useScroll,
   useTransform,
-  useMotionValue,
-  useSpring,
-  useMotionTemplate,
 } from "framer-motion";
 
 // ─── AntlerIcon (unchanged) ──────────────────────────────────────────────────
@@ -117,7 +114,6 @@ const ExperienceText = memo(function ExperienceText({ opacity, y }) {
       style={{ opacity, y }}
       className="absolute inset-0 z-3 flex items-center justify-center pointer-events-none"
     >
-      {/* Offset slightly below vertical center */}
       <div className="text-center mt-20">
         <p
           style={{
@@ -162,38 +158,132 @@ const ExperienceText = memo(function ExperienceText({ opacity, y }) {
 function Hero() {
   const containerRef = useRef(null);
 
-  // ── Clip-path cursor reveal (water-drop / foam effect) ─────────────────
-  const cursorX    = useMotionValue(-9999);
-  const cursorY    = useMotionValue(-9999);
-  const clipRadius = useMotionValue(0);       // 0 = hidden, 180 = full reveal
-  const idleTimer  = useRef(null);
+  // ── GSAP cursor reveal refs ──────────────────────────────────────────────
+  const colorLayerRef = useRef(null);
+  const glowRef       = useRef(null);
+  // Proxy object — GSAP animates these numeric values directly, no re-renders
+  const clipState     = useRef({ x: -9999, y: -9999, r: 0 });
+  const idleTimer     = useRef(null);
+  // Stores quickTo functions and active tween references between events
+  const gsapRefs      = useRef({
+    xTo: null,
+    yTo: null,
+    glowXTo: null,
+    glowYTo: null,
+    expandTween: null,
+    collapseTween: null,
+  });
 
-  // Glow trail: lags behind cursor — mimics the lerp * 0.08 from the HTML demo
-  const glowX = useSpring(cursorX, { damping: 40, stiffness: 50, mass: 1.5 });
-  const glowY = useSpring(cursorY, { damping: 40, stiffness: 50, mass: 1.5 });
+  useEffect(() => {
+    const colorEl = colorLayerRef.current;
+    const glowEl  = glowRef.current;
+    if (!colorEl || !glowEl) return;
 
-  // Live clip-path string — Framer Motion drives the DOM directly, zero re-renders
-  const colorClip = useMotionTemplate`circle(${clipRadius}px at ${cursorX}px ${cursorY}px)`;
+    // Skip on touch-only devices — no cursor to track
+    if (!window.matchMedia("(hover: hover)").matches) return;
 
-  const handleMouseMove = (e) => {
+    const state = clipState.current;
+    const refs  = gsapRefs.current;
+
+    // Push glow off-screen until first cursor move
+    gsap.set(glowEl, { xPercent: -50, yPercent: -50, x: -9999, y: -9999 });
+
+    // Single reusable updater — called by every GSAP onUpdate
+    function applyClipPath() {
+      colorEl.style.clipPath = `circle(${state.r.toFixed(1)}px at ${state.x.toFixed(1)}px ${state.y.toFixed(1)}px)`;
+    }
+
+    // quickTo returns a function you call with the target value — ultra-fast path, no tween object overhead
+    refs.xTo = gsap.quickTo(state, "x", {
+      duration: 0.38,
+      ease: "power3.out",
+      onUpdate: applyClipPath,
+    });
+    refs.yTo = gsap.quickTo(state, "y", {
+      duration: 0.38,
+      ease: "power3.out",
+      onUpdate: applyClipPath,
+    });
+
+    // Glow lags further behind for depth — slowest layer
+    refs.glowXTo = gsap.quickTo(glowEl, "x", { duration: 1.15, ease: "power2.out" });
+    refs.glowYTo = gsap.quickTo(glowEl, "y", { duration: 1.15, ease: "power2.out" });
+
+    return () => {
+      gsap.killTweensOf(state);
+      gsap.killTweensOf(glowEl);
+      clearTimeout(idleTimer.current);
+    };
+  }, []);
+
+  const handleMouseMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    cursorX.set(e.clientX - rect.left);
-    cursorY.set(e.clientY - rect.top);
+    const x    = e.clientX - rect.left;
+    const y    = e.clientY - rect.top;
 
-    // Snap circle open with a spring burst
-    animate(clipRadius, 180, { type: "spring", stiffness: 280, damping: 28 });
+    const refs  = gsapRefs.current;
+    const state = clipState.current;
 
-    // Collapse back after 140 ms of no movement
+    // Feed new position into quickTo — GSAP blends toward it smoothly
+    refs.xTo(x);
+    refs.yTo(y);
+    refs.glowXTo(x);
+    refs.glowYTo(y);
+
+    // If a collapse is in flight, abort it and expand back to full size
+    if (refs.collapseTween?.isActive()) {
+      refs.collapseTween.kill();
+      refs.collapseTween = null;
+    }
+
+    // Only launch an expand tween if the circle isn't already fully open
+    if (!refs.expandTween?.isActive() && state.r < 578) {
+      refs.expandTween = gsap.to(state, {
+        r: 580,
+        duration: 0.6,
+        ease: "power2.out",
+        onUpdate: () => {
+          if (colorLayerRef.current) {
+            colorLayerRef.current.style.clipPath = `circle(${state.r.toFixed(1)}px at ${state.x.toFixed(1)}px ${state.y.toFixed(1)}px)`;
+          }
+        },
+      });
+    }
+
+    // Reset idle collapse timer on every move
     clearTimeout(idleTimer.current);
     idleTimer.current = setTimeout(() => {
-      animate(clipRadius, 0, { duration: 0.55, ease: [0.22, 1, 0.36, 1] });
-    }, 140);
-  };
+      if (refs.expandTween?.isActive()) refs.expandTween.kill();
+      refs.collapseTween = gsap.to(state, {
+        r: 0,
+        duration: 0.9,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          if (colorLayerRef.current) {
+            colorLayerRef.current.style.clipPath = `circle(${state.r.toFixed(1)}px at ${state.x.toFixed(1)}px ${state.y.toFixed(1)}px)`;
+          }
+        },
+      });
+    }, 260);
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     clearTimeout(idleTimer.current);
-    animate(clipRadius, 0, { duration: 0.4, ease: "easeOut" });
-  };
+    const refs  = gsapRefs.current;
+    const state = clipState.current;
+
+    if (refs.expandTween?.isActive()) refs.expandTween.kill();
+    refs.collapseTween = gsap.to(state, {
+      r: 0,
+      duration: 0.9,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (colorLayerRef.current) {
+          colorLayerRef.current.style.clipPath = `circle(${state.r.toFixed(1)}px at ${state.x.toFixed(1)}px ${state.y.toFixed(1)}px)`;
+        }
+      },
+    });
+  }, []);
 
   // Track scroll progress across the full 550vh container
   const { scrollYProgress } = useScroll({
@@ -205,7 +295,7 @@ function Hero() {
   const contentY = useTransform(scrollYProgress, [0, 0.12], ["0%", "-28%"]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.10], [1, 0]);
   const contentBlurRaw = useTransform(scrollYProgress, [0, 0.10], [0, 10]);
-  const contentFilter = useTransform(
+  const contentFilter  = useTransform(
     contentBlurRaw,
     (v) => `blur(${v.toFixed(2)}px)`
   );
@@ -214,7 +304,6 @@ function Hero() {
   const indicatorOpacity = useTransform(scrollYProgress, [0, 0.07], [1, 0]);
 
   // ── Phase 2: Drone zoom-out — continuous across the full scroll ──────────
-  // Scale 1.9 (tight close-up) → 1.0 (full landscape visible)
   const imageScale = useTransform(scrollYProgress, [0, 0.88], [1.9, 1.0]);
 
   // ── Phase 3: OverlayContent — fade in, hold, fade out ───────────────────
@@ -223,11 +312,7 @@ function Hero() {
     [0.26, 0.36, 0.44, 0.52],
     [0, 1, 1, 0]
   );
-  const overlayY = useTransform(
-    scrollYProgress,
-    [0.26, 0.36],
-    ["24px", "0px"]
-  );
+  const overlayY = useTransform(scrollYProgress, [0.26, 0.36], ["24px", "0px"]);
 
   // ── Phase 4: Bottom-center text — fade in, hold, fade out ───────────────
   const text1Opacity = useTransform(
@@ -235,11 +320,7 @@ function Hero() {
     [0.54, 0.62, 0.68, 0.75],
     [0, 1, 1, 0]
   );
-  const text1Y = useTransform(
-    scrollYProgress,
-    [0.54, 0.63],
-    ["22px", "0px"]
-  );
+  const text1Y = useTransform(scrollYProgress, [0.54, 0.63], ["22px", "0px"]);
 
   // ── Phase 5: "Experience Méchante Cabane" — fade in, hold, fade out ─────
   const text2Opacity = useTransform(
@@ -247,11 +328,7 @@ function Hero() {
     [0.77, 0.85, 0.90, 0.96],
     [0, 1, 1, 0]
   );
-  const text2Y = useTransform(
-    scrollYProgress,
-    [0.77, 0.85],
-    ["22px", "0px"]
-  );
+  const text2Y = useTransform(scrollYProgress, [0.77, 0.85], ["22px", "0px"]);
 
   return (
     // 550vh — generous room for all 5 animation phases
@@ -278,10 +355,16 @@ function Hero() {
           />
         </motion.div>
 
-        {/* ── Layer 2: full-color image — revealed only inside the clip circle ── */}
+        {/* ── Layer 2: full-color image — GSAP drives clip-path reveal ── */}
         <motion.div
+          ref={colorLayerRef}
           className="absolute inset-0 will-change-transform"
-          style={{ scale: imageScale, clipPath: colorClip }}
+          style={{
+            scale: imageScale,
+            // Initial clip-path keeps layer invisible; GSAP takes over after mount
+            clipPath: "circle(0px at -9999px -9999px)",
+            willChange: "clip-path, transform",
+          }}
         >
           <Image
             src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=2560&auto=format&fit=crop"
@@ -293,19 +376,20 @@ function Hero() {
           />
         </motion.div>
 
-        {/* ── Glow trail: lags behind cursor, sits above images ── */}
-        <motion.div
+        {/* ── Glow trail: GSAP drives position — lags behind clip circle ── */}
+        <div
+          ref={glowRef}
           className="absolute rounded-full pointer-events-none"
           style={{
-            width: 120,
-            height: 120,
-            background: "radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 70%)",
-            filter: "blur(12px)",
-            left: glowX,
-            top: glowY,
-            x: "-50%",
-            y: "-50%",
+            width: 380,
+            height: 380,
+            left: 0,
+            top: 0,
+            background:
+              "radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 45%, transparent 70%)",
+            filter: "blur(18px)",
             zIndex: 1,
+            willChange: "transform",
           }}
         />
 
@@ -313,7 +397,7 @@ function Hero() {
         <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/20 to-black/60 z-1" />
         <div className="absolute inset-0 bg-black/25 z-1" />
 
-{/* ── Phase 1: Hero content (title / subtitle / CTA) ── */}
+        {/* ── Phase 1: Hero content (title / subtitle / CTA) ── */}
         <motion.div
           className="relative z-2 flex flex-col items-center justify-center h-full px-4 text-center will-change-transform"
           style={{
