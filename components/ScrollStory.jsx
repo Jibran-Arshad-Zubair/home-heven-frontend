@@ -100,7 +100,7 @@ const ImagePanel = memo(function ImagePanel({ image, word, fromLeft, isInView })
       initial={{ opacity: 0, x: fromLeft ? -50 : 50 }}
       transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="relative w-full overflow-hidden" style={{ height: "clamp(50vh, 72vh, 78vh)" }}>
+      <div className="relative w-full overflow-hidden rounded-xl" style={{ height: "clamp(50vh, 72vh, 78vh)" }}>
         <Image
           src={image}
           alt={word}
@@ -208,7 +208,7 @@ const StickyStep = memo(function StickyStep() {
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
         >
           <div
-            className="relative w-full overflow-hidden"
+            className="relative w-full overflow-hidden rounded-xl"
             style={{ height: "clamp(50vh, 72vh, 78vh)" }}
           >
             <Image
