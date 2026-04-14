@@ -177,17 +177,17 @@ const StickyStep = memo(function StickyStep() {
     offset: ["start start", "end end"],
   });
 
-  // FOR  — fade in [0 → 0.14], hold [0.14 → 0.32], rise + fade [0.32 → 0.42]
-  const forOpacity = useTransform(scrollYProgress, [0.02, 0.14, 0.32, 0.42], [0, 1, 1, 0]);
-  const forY = useTransform(scrollYProgress, [0.02, 0.14, 0.32, 0.42], ["32px", "0px", "0px", "-52px"]);
+  // FOR  — fade in [0.00 → 0.08], hold [0.08 → 0.27], rise + fade [0.27 → 0.36]
+  const forOpacity = useTransform(scrollYProgress, [0.0, 0.08, 0.27, 0.36], [0, 1, 1, 0]);
+  const forY = useTransform(scrollYProgress, [0.0, 0.08, 0.27, 0.36], ["32px", "0px", "0px", "-52px"]);
 
-  // EVERY — fade in [0.42 → 0.54], hold [0.54 → 0.66], rise + fade [0.66 → 0.76]
-  const everyOpacity = useTransform(scrollYProgress, [0.42, 0.54, 0.66, 0.76], [0, 1, 1, 0]);
-  const everyY = useTransform(scrollYProgress, [0.42, 0.54, 0.66, 0.76], ["32px", "0px", "0px", "-52px"]);
+  // EVERY — fade in [0.36 → 0.46], hold [0.46 → 0.63], rise + fade [0.63 → 0.72]
+  const everyOpacity = useTransform(scrollYProgress, [0.36, 0.46, 0.63, 0.72], [0, 1, 1, 0]);
+  const everyY = useTransform(scrollYProgress, [0.36, 0.46, 0.63, 0.72], ["32px", "0px", "0px", "-52px"]);
 
-  // GENERATION — fade in [0.76 → 0.88], hold [0.88 → 1.0]
-  const generationOpacity = useTransform(scrollYProgress, [0.76, 0.88], [0, 1]);
-  const generationY = useTransform(scrollYProgress, [0.76, 0.88], ["32px", "0px"]);
+  // GENERATION — fade in [0.72 → 0.84], hold [0.84 → 1.0]
+  const generationOpacity = useTransform(scrollYProgress, [0.72, 0.84, 1.0], [0, 1, 1]);
+  const generationY = useTransform(scrollYProgress, [0.72, 0.84, 1.0], ["32px", "0px", "0px"]);
 
   return (
     <div ref={containerRef} className="relative" style={{ height: "400vh" }}>
