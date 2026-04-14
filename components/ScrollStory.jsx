@@ -1,8 +1,8 @@
 "use client";
 
-import { memo, useRef } from "react";
+import { memo, useRef, useState } from "react";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent, useInView } from "framer-motion";
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 const SCROLL_STEPS = [
@@ -169,29 +169,26 @@ const StepItem = memo(function StepItem({ image, word, index }) {
 });
 
 // ── Step 7: Sticky image (left) + FOR → EVERY → GENERATION on right ───────────
+const WORDS = ["For", "Every", "Generation"];
+
 const StickyStep = memo(function StickyStep() {
   const containerRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
-  // FOR  — fade in [0.00 → 0.08], hold [0.08 → 0.27], rise + fade [0.27 → 0.36]
-  const forOpacity = useTransform(scrollYProgress, [0.0, 0.08, 0.27, 0.36], [0, 1, 1, 0]);
-  const forY = useTransform(scrollYProgress, [0.0, 0.08, 0.27, 0.36], ["32px", "0px", "0px", "-52px"]);
-
-  // EVERY — fade in [0.36 → 0.46], hold [0.46 → 0.63], rise + fade [0.63 → 0.72]
-  const everyOpacity = useTransform(scrollYProgress, [0.36, 0.46, 0.63, 0.72], [0, 1, 1, 0]);
-  const everyY = useTransform(scrollYProgress, [0.36, 0.46, 0.63, 0.72], ["32px", "0px", "0px", "-52px"]);
-
-  // GENERATION — fade in [0.72 → 0.84], hold [0.84 → 1.0]
-  const generationOpacity = useTransform(scrollYProgress, [0.72, 0.84, 1.0], [0, 1, 1]);
-  const generationY = useTransform(scrollYProgress, [0.72, 0.84, 1.0], ["32px", "0px", "0px"]);
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    if (v < 0.33)      setActiveIndex(0); // FOR
+    else if (v < 0.67) setActiveIndex(1); // EVERY
+    else               setActiveIndex(2); // GENERATION
+  });
 
   return (
     <div ref={containerRef} className="relative" style={{ height: "400vh" }}>
-      <div className="sticky top-0 h-screen flex flex-col md:flex-row overflow-hidden">
+      <div className="sticky top-0 h-screen flex flex-col md:flex-row">
 
         {/* Left: sticky image — enters once, stays fixed */}
         <motion.div
@@ -222,7 +219,7 @@ const StickyStep = memo(function StickyStep() {
           </div>
         </motion.div>
 
-        {/* Right: cycling word transitions */}
+        {/* Right: one word at a time */}
         <div
           className="w-full md:w-1/2 flex flex-col items-center md:items-start relative"
           style={{
@@ -233,23 +230,19 @@ const StickyStep = memo(function StickyStep() {
         >
           <span style={prefixStyle}>A place to</span>
 
-          {/* Word slot — all three words occupy the same position */}
-          <div className="relative" style={{ height: "clamp(4rem, 10vh, 10rem)", width: "100%" }}>
-            <motion.h2
-              style={{ ...wordStyle, opacity: forOpacity, y: forY, position: "absolute", top: 0, left: 0 }}
-            >
-              For
-            </motion.h2>
-            <motion.h2
-              style={{ ...wordStyle, opacity: everyOpacity, y: everyY, position: "absolute", top: 0, left: 0 }}
-            >
-              Every
-            </motion.h2>
-            <motion.h2
-              style={{ ...wordStyle, opacity: generationOpacity, y: generationY, position: "absolute", top: 0, left: 0 }}
-            >
-              Generation
-            </motion.h2>
+          <div style={{ position: "relative", overflow: "visible", minHeight: "clamp(6rem, 12vh, 14rem)", width: "100%" }}>
+            <AnimatePresence mode="wait">
+              <motion.h2
+                key={activeIndex}
+                style={wordStyle}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -40 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {WORDS[activeIndex]}
+              </motion.h2>
+            </AnimatePresence>
           </div>
         </div>
 
